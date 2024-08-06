@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Juego-1</title>
+	<style>
+
+		@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&family=Oswald:wght@200..700&display=swap');
+
+		:root{
+			--clr: #678928;
+			--clr-2: #f2f2f2 ;
+		}
+
+		*{
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body{
+			font-family: "Lato", sans-serif;
+			min-height: 100vh;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-direction: column;
+			background: #7fa931;
+		}
+
+		img{
+			min-width: 100%;
+			height: auto;
+		}
+		#game{
+			background: var(--clr);
+			outline: 2px solid var(--clr-2);
+		}
+
+		
+
+		.controls{
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			width: 400px;
+			height: 400px;
+			border-radius: 4px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+			flex-direction: column;
+		}
+
+		.controls .img-logo{
+			width: 240px;
+			height: auto;
+		}
+
+		.controls .img-logo img{
+			width: 100%;
+		}
+		.controls button{
+			display: block;
+			/* width: 120px;
+			height: 50px;*/
+			width: 100%;
+			padding: 0.625rem 1rem;
+			color: var(--clr-2);
+			border: 2px solid var(--clr-2);
+			border-radius: 4px;
+			margin: 10px 0;
+			background: transparent;
+			font-weight: 900;
+			cursor: pointer;
+		}
+
+		.controls.disable{
+			display: none;
+		}
+		.score-container{
+	
+			display: flex;
+		    align-items: center;
+		    color: #f2f2f2;
+		    font-size: 28px;
+		    font-weight: 500;
+		    width: 400px;
+		    justify-content: space-between;
+		}
+	</style>
+</head>
+<body>
+
+	<div class="score-container">
+		<span class="actual-score">000</span>
+		<span class="heightScore">000</span>
+	</div>
+
+	
+	<canvas width="400" height="400" id="game"></canvas>
+
+	<div class="controls">
+		<div class="img-logo">
+			<img src="snake.png" alt="" class="">
+		</div>
+		<div class="btns">
+			<button class="btn start">Start</button>
+			<!-- <button class="btn">Puntajes Mas Altos</button> -->
+		</div>
+		
+	</div>
+
+<script>
+	const btns = document.querySelector('.btns');
+	const canvas = document.getElementById('game');
+	const ctx = canvas.getContext('2d');
+	const score = document.querySelector('.actual-score')
+	const heightScoreBox = document.querySelector('.heightScore')
+
+	// Arreglar el puntaje maximo
+
+	let grid = 16
+	let fps = 0
+	let portada = true
+	let heightScore = 0
+
+	let ini
+
+	let snake = {
+		x: 160,
+		y: 160,
+		directionX : grid,
+		directionY : 0,
+		bodySnake : [],
+		clr : '#d8cb4a',
+		maxCells: 4,
+		count: 0,
+		
+	}
+
+
+	let apple = {
+		x : 320,
+		y : 320,
+		clr : '#C80036',
+	}
+
+
+
+	btns.addEventListener('click', (e)=>{
+		const btnSelect = e.target;
+
+
+		if(btnSelect.classList.contains('start')){
+			startGame(e.target)
+		}else{
+			console.log('Puntajes Mas Altos');
+		}
+	})
+
+	const getRandomPosition = () => {
+		return Math.floor(Math.random() * (canvas.width / grid)) * grid
+	}
+
+
+	function drawnObj(){
+
+		ini = requestAnimationFrame(drawnObj)
+		colisiones()
+
+		if(fps++ < 5){
+			return
+		}
+
+		fps = 0
+		
+
+		snake.x += snake.directionX
+		snake.y += snake.directionY
+
+		ctx.clearRect(0 ,0 , canvas.width, canvas.height);
+
+	
+
+
+		
+		
+		snake.bodySnake.unshift({x : snake.x, y : snake.y});
+
+		if(snake.bodySnake.length > snake.maxCells){
+
+			snake.bodySnake.pop()
+		}
+
+
+		ctx.fillStyle = apple.clr
+		ctx.fillRect(apple.x, apple.y, grid, grid)
+		ctx.fillStyle = snake.clr
+
+		score.textContent = snake.count.toString().padStart(3, '0')
+
+		snake.bodySnake.forEach((part,index)=>{
+			
+			ctx.fillRect(part.x, part.y, grid-1, grid-1)
+
+			if(part.x === apple.x && part.y === apple.y){
+				
+				snake.maxCells++
+				snake.count++
+
+				apple.x = getRandomPosition()
+				apple.y = getRandomPosition()			
+			}
+
+
+
+
+			for(let i = index +1; i < snake.bodySnake.length; i++){
+
+
+				if(part.x === snake.bodySnake[i].x && part.y === snake.bodySnake[i].y){
+					snakeCrash()
+				}
+
+
+			}
+
+
+		})
+
+		
+
+	}
+
+
+	function colisiones(){
+		if(snake.x < 0 || snake.x >= 400 || snake.y < 0 || snake.y >= 400){
+			snakeCrash()
+
+		}
+	}
+
+
+
+	function snakeCrash(){
+			
+			if(snake.bodySnake.length > heightScore){
+
+				heightScore = snake.bodySnake.length - 4
+				heightScoreBox.textContent = heightScore
+			}
+
+
+			portada = true	
+			btns.parentElement.classList.remove('disable')
+
+			resetGame()
+
+			ctx.clearRect(0 ,0 , canvas.width, canvas.height);
+			cancelAnimationFrame(ini)
+	
+		
+
+		
+	}
+
+	function resetGame(){
+
+			snake.x = 160
+			snake.y = 160
+			apple.x = 320
+			apple.y = 320
+			snake.bodySnake = [];
+			snake.maxCells = 4;
+			snake.count = 0
+	}
+
+
+	document.addEventListener('keydown', (key)=>{
+		if(key.keyCode == 38 || key.key === 'w'){
+			snake.directionY = -grid
+			snake.directionX = 0
+		}
+		if(key.keyCode == 37 || key.key === 'a'){
+			snake.directionX = -grid
+			snake.directionY = 0
+	
+		}
+		if(key.keyCode == 39 || key.key === 'd'){
+			snake.directionX = +grid;
+			snake.directionY = 0
+		}
+		if(key.keyCode == 40 || key.key === 's'){
+			snake.directionY = +grid
+			snake.directionX = 0
+		}
+
+	})
+
+	function startGame(element){
+
+		portada = false
+		element.parentElement.parentElement.classList.add('disable')
+		resetGame()
+		ini = requestAnimationFrame(drawnObj)
+	}
+
+
+</script>
+</body>
+</html>
